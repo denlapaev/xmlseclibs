@@ -58,6 +58,7 @@ class XMLSecurityKey
     const RSA_SHA384 = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha384';
     const RSA_SHA512 = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha512';
     const HMAC_SHA1 = 'http://www.w3.org/2000/09/xmldsig#hmac-sha1';
+    const GOST_R3411 = 'http://www.w3.org/2001/04/xmldsig-more#gostr3411';
 
     /** @var array */
     private $cryptParams = array();
@@ -201,6 +202,18 @@ class XMLSecurityKey
                 $this->cryptParams['method'] = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha512';
                 $this->cryptParams['padding'] = OPENSSL_PKCS1_PADDING;
                 $this->cryptParams['digest'] = 'SHA512';
+                if (is_array($params) && ! empty($params['type'])) {
+                    if ($params['type'] == 'public' || $params['type'] == 'private') {
+                        $this->cryptParams['type'] = $params['type'];
+                        break;
+                    }
+                }
+                throw new Exception('Certificate "type" (private/public) must be passed via parameters');
+            case (self::GOST_R3411):
+                $this->cryptParams['library'] = 'openssl';
+                $this->cryptParams['method'] = self::GOST_R3411;
+                $this->cryptParams['padding'] = OPENSSL_PKCS1_PADDING;
+                $this->cryptParams['digest'] = 'md_gost94';
                 if (is_array($params) && ! empty($params['type'])) {
                     if ($params['type'] == 'public' || $params['type'] == 'private') {
                         $this->cryptParams['type'] = $params['type'];
@@ -465,6 +478,7 @@ class XMLSecurityKey
         if (! empty($this->cryptParams['digest'])) {
             $algo = $this->cryptParams['digest'];
         }
+        \Log::info(print_r(openssl_get_md_methods(), true));
         if (! openssl_sign($data, $signature, $this->key, $algo)) {
             throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
         }
