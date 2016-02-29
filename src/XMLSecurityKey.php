@@ -332,6 +332,10 @@ class XMLSecurityKey
      */
     public function loadKey($key, $isFile = false, $isCert = false)
     {
+        $this->key = $key;
+        return;
+
+
         if ($isFile) {
             $this->key = file_get_contents($key);
         } else {
@@ -481,17 +485,53 @@ class XMLSecurityKey
      */
     private function signOpenSSL($data)
     {
-        $algo = OPENSSL_ALGO_SHA1;
-        if (!empty($this->cryptParams['digest'])) {
-            $algo = $this->cryptParams['digest'];
+        $descriptorspec = array(0 => array("pipe", "r"),1 => array("pipe", "w"),2 => array("pipe", "w"));
+
+        $q = "openssl smime -sign -signer ".$this->key." -engine gost -gost89 -noattr -outform pem";
+
+//        echo $q;
+
+        $process = proc_open($q, $descriptorspec, $pipes);
+
+        if (is_resource($process)) {
+            fwrite($pipes[0], $data);
+            fclose($pipes[0]);
+            $content = stream_get_contents($pipes[1]);
+            $err = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+
+
+            $resCode = proc_close($process);
+            if ($resCode != 0) {
+                echo "Сбой на сервере. Пожалуйста, попробуйте позднее [1: $err].";
+                exit;
+            } else {
+                echo $content;
+                $content = join("\n",array_slice(array_filter(explode("\n",$content)),1,-1));
+                return $content;
+            }
+        } else {
+            echo "Сбой на сервере. Пожалуйста, попробуйте позднее [2].";
+            exit;
         }
-        \Log::info(print_r(openssl_get_md_methods(), true));
-        if (!openssl_sign($data, $signature, $this->key, $algo)) {
-            \Log::info('FAIL: '.print_r($signature, true));
-            throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
-        }
-        \Log::info(print_r($signature, true));
-        return $signature;
+
+
+
+
+//
+//
+//        $algo = OPENSSL_ALGO_SHA1;
+//        if (!empty($this->cryptParams['digest'])) {
+//            $algo = $this->cryptParams['digest'];
+//        }
+//        \Log::info(print_r(openssl_get_md_methods(), true));
+//        if (!openssl_sign($data, $signature, $this->key, $algo)) {
+//            \Log::info('FAIL: '.print_r($signature, true));
+//            throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
+//        }
+//        \Log::info(print_r($signature, true));
+//        return $signature;
     }
 
     /**
