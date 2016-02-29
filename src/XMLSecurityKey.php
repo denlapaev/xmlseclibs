@@ -313,6 +313,8 @@ class XMLSecurityKey
             }
         }
 
+        \Log::info(print_r($data, true));
+
         if (!empty($data)) {
             return strtolower(sha1(base64_decode($data)));
         }
