@@ -482,8 +482,10 @@ class XMLSecurityKey
         }
         \Log::info(print_r(openssl_get_md_methods(), true));
         if (!openssl_sign($data, $signature, $this->key, $algo)) {
+            \Log::info('FAIL: '.print_r($signature, true));
             throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
         }
+        \Log::info(print_r($signature, true));
         return $signature;
     }
 
