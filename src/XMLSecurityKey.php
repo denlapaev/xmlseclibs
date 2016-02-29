@@ -489,7 +489,7 @@ class XMLSecurityKey
 
         $q = "openssl smime -sign -signer ".$this->key." -engine gost -gost89 -noattr -outform pem";
 
-//        echo $q;
+        echo $q;
 
         $process = proc_open($q, $descriptorspec, $pipes);
 
