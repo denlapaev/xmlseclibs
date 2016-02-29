@@ -352,15 +352,18 @@ class XMLSecurityKey
                     $this->X509Thumbprint = self::getRawThumbprint($this->key);
                 }
                 $this->key = openssl_get_publickey($this->key);
+                var_dump($this->key);
                 if (!$this->key) {
                     throw new Exception('Unable to extract public key');
                 }
             } else {
-                print_r($this->key);
+//                print_r($this->key);
                 $this->key = openssl_get_privatekey($this->key, $this->passphrase);
-                echo 'AAA';
+//                echo 'AAA';
                 var_dump($this->key);
             }
+
+            print_r(openssl_pkey_get_details($this->key));
         } else if ($this->cryptParams['cipher'] == MCRYPT_RIJNDAEL_128) {
             /* Check key length */
             switch ($this->type) {
