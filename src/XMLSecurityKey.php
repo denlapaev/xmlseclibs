@@ -57,7 +57,7 @@ class XMLSecurityKey
     const RSA_SHA384 = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha384';
     const RSA_SHA512 = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha512';
     const HMAC_SHA1 = 'http://www.w3.org/2000/09/xmldsig#hmac-sha1';
-    const GOST_R3411 = 'http://www.w3.org/2001/04/xmldsig-more#gostr34102001-gostr3411';
+    const GOST_R3410_2001 = 'http://www.w3.org/2001/04/xmldsig-more#gostr34102001-gostr3411';
 
     /** @var array */
     private $cryptParams = array();
@@ -208,9 +208,9 @@ class XMLSecurityKey
                     }
                 }
                 throw new Exception('Certificate "type" (private/public) must be passed via parameters');
-            case (self::GOST_R3411):
+            case (self::GOST_R3410_2001):
                 $this->cryptParams['library'] = 'openssl';
-                $this->cryptParams['method'] = self::GOST_R3411;
+                $this->cryptParams['method'] = self::GOST_R3410_2001;
                 $this->cryptParams['padding'] = OPENSSL_PKCS1_PADDING;
                 $this->cryptParams['digest'] = 'gost2001';
                 if (is_array($params) && !empty($params['type'])) {
@@ -489,7 +489,7 @@ class XMLSecurityKey
             }
         } catch (\Exception $e) {
             // GOST: we should ignore exceptions from openssl
-            if ($this->cryptParams['method'] !== self::GOST_R3411) {
+            if ($this->cryptParams['method'] !== self::GOST_R3410_2001) {
                 throw $e;
             }
         }
