@@ -212,7 +212,7 @@ class XMLSecurityKey
                 $this->cryptParams['library'] = 'openssl';
                 $this->cryptParams['method'] = self::GOST_R3410_2001;
                 $this->cryptParams['padding'] = OPENSSL_PKCS1_PADDING;
-                $this->cryptParams['digest'] = 'gost2001';
+                $this->cryptParams['digest'] = 'GOST R 34.10-2001';
                 if (is_array($params) && !empty($params['type'])) {
                     if ($params['type'] == 'public' || $params['type'] == 'private') {
                         $this->cryptParams['type'] = $params['type'];
