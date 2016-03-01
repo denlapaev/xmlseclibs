@@ -671,6 +671,8 @@ class XMLSecurityDSig
         $canonicalData = $this->processTransforms($refNode, $node);
         $digValue = $this->calculateDigest($algorithm, $canonicalData);
 
+        \Log::info('DIGEST ALGO:'.$algorithm);
+
         $digestMethod = $this->createNewSignNode('DigestMethod');
         $refNode->appendChild($digestMethod);
         $digestMethod->setAttribute('Algorithm', $algorithm);
