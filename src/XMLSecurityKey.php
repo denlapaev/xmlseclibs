@@ -313,8 +313,6 @@ class XMLSecurityKey
             }
         }
 
-        \Log::info(print_r($data, true));
-
         if (!empty($data)) {
             return strtolower(sha1(base64_decode($data)));
         }
@@ -332,15 +330,12 @@ class XMLSecurityKey
      */
     public function loadKey($key, $isFile = false, $isCert = false)
     {
-        $this->key = $key;
-        return;
-
-
         if ($isFile) {
             $this->key = file_get_contents($key);
         } else {
             $this->key = $key;
         }
+
         if ($isCert) {
             $this->key = openssl_x509_read($this->key);
             openssl_x509_export($this->key, $str_cert);
@@ -349,25 +344,22 @@ class XMLSecurityKey
         } else {
             $this->x509Certificate = null;
         }
+
         if ($this->cryptParams['library'] == 'openssl') {
             if ($this->cryptParams['type'] == 'public') {
                 if ($isCert) {
                     /* Load the thumbprint if this is an X509 certificate. */
                     $this->X509Thumbprint = self::getRawThumbprint($this->key);
                 }
+
                 $this->key = openssl_get_publickey($this->key);
-                var_dump($this->key);
+
                 if (!$this->key) {
                     throw new Exception('Unable to extract public key');
                 }
             } else {
-//                print_r($this->key);
                 $this->key = openssl_get_privatekey($this->key, $this->passphrase);
-//                echo 'AAA';
-                var_dump($this->key);
             }
-
-            print_r(openssl_pkey_get_details($this->key));
         } else if ($this->cryptParams['cipher'] == MCRYPT_RIJNDAEL_128) {
             /* Check key length */
             switch ($this->type) {
@@ -485,53 +477,17 @@ class XMLSecurityKey
      */
     private function signOpenSSL($data)
     {
-        $descriptorspec = array(0 => array("pipe", "r"),1 => array("pipe", "w"),2 => array("pipe", "w"));
+        $algo = OPENSSL_ALGO_SHA1;
 
-        $q = "openssl smime -sign -signer ".$this->key." -engine gost -gost89 -noattr -outform pem";
-
-        echo $q;
-
-        $process = proc_open($q, $descriptorspec, $pipes);
-
-        if (is_resource($process)) {
-            fwrite($pipes[0], $data);
-            fclose($pipes[0]);
-            $content = stream_get_contents($pipes[1]);
-            $err = stream_get_contents($pipes[2]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
-
-
-            $resCode = proc_close($process);
-            if ($resCode != 0) {
-                echo "Сбой на сервере. Пожалуйста, попробуйте позднее [1: $err].";
-                exit;
-            } else {
-                echo $content;
-                $content = join("\n",array_slice(array_filter(explode("\n",$content)),1,-1));
-                return $content;
-            }
-        } else {
-            echo "Сбой на сервере. Пожалуйста, попробуйте позднее [2].";
-            exit;
+        if (!empty($this->cryptParams['digest'])) {
+            $algo = $this->cryptParams['digest'];
         }
 
+        if (!openssl_sign($data, $signature, $this->key, $algo)) {
+            throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
+        }
 
-
-
-//
-//
-//        $algo = OPENSSL_ALGO_SHA1;
-//        if (!empty($this->cryptParams['digest'])) {
-//            $algo = $this->cryptParams['digest'];
-//        }
-//        \Log::info(print_r(openssl_get_md_methods(), true));
-//        if (!openssl_sign($data, $signature, $this->key, $algo)) {
-//            \Log::info('FAIL: '.print_r($signature, true));
-//            throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
-//        }
-//        \Log::info(print_r($signature, true));
-//        return $signature;
+        return $signature;
     }
 
     /**
@@ -728,7 +684,6 @@ class XMLSecurityKey
         return $this->X509Thumbprint;
     }
 
-
     /**
      * Create key from an EncryptedKey-element.
      *
@@ -739,7 +694,6 @@ class XMLSecurityKey
      */
     public static function fromEncryptedKeyElement(DOMElement $element)
     {
-
         $objenc = new XMLSecEnc();
         $objenc->setNode($element);
         if (!$objKey = $objenc->locateKey()) {
