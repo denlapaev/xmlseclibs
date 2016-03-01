@@ -212,7 +212,7 @@ class XMLSecurityKey
                 $this->cryptParams['library'] = 'openssl';
                 $this->cryptParams['method'] = self::GOST_R3411;
                 $this->cryptParams['padding'] = OPENSSL_PKCS1_PADDING;
-                $this->cryptParams['digest'] = 'md_gost94';
+                $this->cryptParams['digest'] = 'GOST R 34.11-94';
                 if (is_array($params) && !empty($params['type'])) {
                     if ($params['type'] == 'public' || $params['type'] == 'private') {
                         $this->cryptParams['type'] = $params['type'];
@@ -483,8 +483,15 @@ class XMLSecurityKey
             $algo = $this->cryptParams['digest'];
         }
 
-        if (!openssl_sign($data, $signature, $this->key, $algo)) {
-            throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
+        try {
+            if (!openssl_sign($data, $signature, $this->key, $algo)) {
+                throw new Exception('Failure Signing Data: ' . openssl_error_string() . ' - ' . $algo);
+            }
+        } catch (\Exception $e) {
+            // GOST: we should ignore exceptions from openssl
+            if ($this->cryptParams['method'] !== self::GOST_R3411) {
+                throw $e;
+            }
         }
 
         return $signature;
